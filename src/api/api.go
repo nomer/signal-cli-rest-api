@@ -11,6 +11,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/polds/imgbase64"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/bbernhard/signal-cli-rest-api/client"
@@ -89,6 +90,7 @@ type SendMessageV1 struct {
 	Recipients       []string `json:"recipients"`
 	Message          string   `json:"message"`
 	Base64Attachment string   `json:"base64_attachment" example:"'<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;base64,<BASE64 ENCODED DATA>' OR 'data:<MIME-TYPE>;filename=<FILENAME>;base64,<BASE64 ENCODED DATA>'"`
+	ImageURL         string   `json:"image_url"`
 	IsGroup          bool     `json:"is_group"`
 }
 
@@ -316,6 +318,13 @@ func (a *Api) Send(c *gin.Context) {
 	base64Attachments := []string{}
 	if req.Base64Attachment != "" {
 		base64Attachments = append(base64Attachments, req.Base64Attachment)
+	}
+
+	if req.ImageURL != "" {
+		imgBase64 := imgbase64.FromRemote(req.ImageURL)
+		if len(imgBase64) > 0 {
+			base64Attachments = append(base64Attachments, imgBase64)
+		}
 	}
 
 	timestamp, err := a.signalClient.SendV1(req.Number, req.Message, req.Recipients, base64Attachments, req.IsGroup)
