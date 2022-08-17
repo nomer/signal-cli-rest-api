@@ -99,6 +99,7 @@ type SendMessageV2 struct {
 	Recipients        []string `json:"recipients"`
 	Message           string   `json:"message"`
 	Base64Attachments []string `json:"base64_attachments" example:"<BASE64 ENCODED DATA>,data:<MIME-TYPE>;base64<comma><BASE64 ENCODED DATA>,data:<MIME-TYPE>;filename=<FILENAME>;base64<comma><BASE64 ENCODED DATA>"`
+	ImageURL          string   `json:"image_url"`
 }
 
 type TypingIndicatorRequest struct {
@@ -361,6 +362,13 @@ func (a *Api) SendV2(c *gin.Context) {
 	if req.Number == "" {
 		c.JSON(400, gin.H{"error": "Couldn't process request - please provide a valid number"})
 		return
+	}
+
+	if req.ImageURL != "" {
+		imgBase64 := imgbase64.FromRemote(req.ImageURL)
+		if len(imgBase64) > 0 {
+			req.Base64Attachments = append(req.Base64Attachments, imgBase64)
+		}
 	}
 
 	timestamps, err := a.signalClient.SendV2(req.Number, req.Message, req.Recipients, req.Base64Attachments)
